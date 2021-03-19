@@ -1,15 +1,30 @@
 import sqlite3
 import csv
 import os
+# import pandas as pd
+
 
 conn = sqlite3.connect('db.sqlite3')
 
 cur = conn.cursor()
+files = os.listdir('data')
 
-reader = csv.reader(open('data/api_title.csv', encoding='utf-8'))
-next(reader)
-for row in reader:
-    # to_db = [int(row[0]), str(row[1]), int(row[2]), int(row[3])]
-    cur.execute("INSERT INTO api_title VALUES (?, ?, ?, ?);", row)
+for file in files:
+    if "api" in file:
+        name_file = file.split('.')[0]
+        reader = csv.reader(open(f'data/{name_file}.csv', encoding='utf-8'))
+        first_col = next(reader)
+        marks = len(first_col) * '?, '
+        col_names = tuple(first_col)
+        sql = f"INSERT INTO {name_file} {col_names} VALUES ({marks[0:-2]});"
+        for row in reader:
+            cur.execute(f"{sql}", row)
 conn.commit()
-print(os.listdir('data'))
+conn.close()
+
+# for file in files:
+#     if "api" in file:
+#         name_file = file.split('.')[0]
+#         reader = pd.read_csv(open(f'data/{name_file}.csv', encoding='utf-8'))
+#         reader.to_sql(f'{name_file}', conn, if_exists='append', index=False)
+# conn.close()
