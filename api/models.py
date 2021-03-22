@@ -4,21 +4,29 @@ from django.db import models
 
 
 class User(AbstractUser):
-    USER = 3
-    MODERATOR = 2
-    ADMIN = 1
-    ROLE_CHOICES = [
-        (USER, "user"),
-        (MODERATOR, "moderator"),
-        (ADMIN, "admin"),
-    ]
+    class UserRoles:
+        USER = 'user'
+        MODERATOR = 'moderator'
+        ADMIN = 'admin'
 
-    description = models.TextField(max_length=400, blank=True)
-    role = models.PositiveSmallIntegerField(choices=ROLE_CHOICES, blank=True, null=True)
-    confirmation_code = models.CharField(max_length=30, blank=True)
+        choices = [
+            (USER, USER),
+            (MODERATOR, MODERATOR),
+            (ADMIN, ADMIN),
+        ]
 
-    def __str__(self):
-        return self.username
+    role = models.CharField(max_length=9, choices=UserRoles.choices, default=UserRoles.USER)
+    bio = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(unique=True)
+    confirmation_code = models.CharField(max_length=9, blank=True)
+
+    @property
+    def is_admin(self):
+        return self.role == self.UserRoles.ADMIN or self.is_staff
+
+    @property
+    def is_moderator(self):
+        return self.role == self.UserRoles.MODERATOR
 
 
 class Category(models.Model):
@@ -42,26 +50,26 @@ class Title(models.Model):
     year = models.IntegerField()
     category = models.ForeignKey(Category,
                                  on_delete=models.SET_NULL,
-                                 related_name="category",
+                                 related_name="titles",
                                  blank=True,
                                  null=True)
     description = models.TextField(null=True, blank=True)
-    genre = models.ManyToManyField(Genre, "genre")
+    genre = models.ManyToManyField(Genre, related_name="titles")
 
     def __str__(self):
         return self.name
 
 
 class Review(models.Model):
-    title = models.ForeignKey(Title, on_delete=models.CASCADE, related_name="title")
+    title = models.ForeignKey(Title, on_delete=models.CASCADE, related_name="review")
     text = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="author")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="review")
     score = models.IntegerField(validators=[MinValueValidator(1), MaxValueValidator(10)])
     pub_date = models.DateTimeField(auto_now_add=True, db_index=True)
 
 
 class Comment(models.Model):
-    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="review")
+    review = models.ForeignKey(Review, on_delete=models.CASCADE, related_name="comment")
     text = models.TextField()
-    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="user")
+    author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="comment")
     pub_date = models.DateTimeField(auto_now_add=True, db_index=True)

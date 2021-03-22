@@ -1,7 +1,6 @@
 import sqlite3
 import csv
 import os
-# import pandas as pd
 
 
 conn = sqlite3.connect('db.sqlite3')
